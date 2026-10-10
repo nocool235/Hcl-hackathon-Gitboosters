@@ -1,0 +1,18 @@
+# Central settings. Change values here instead of editing code.
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+
+input:
+  file: null            # e.g. data/raw/dataset.csv (or pass --input on the CLI)
+
+validate:
+  required_columns: []  # fill in once the dataset is known
+  allow_empty: false
+
+transform:
+  drop_duplicates: true
+
+output:
+  file: data/processed/output.csv

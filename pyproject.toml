@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hackathon"
+version = "0.1.0"
+description = "HCLTech hackathon starter: generic config-driven data pipeline"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    "pyarrow>=15.0",   # parquet read/write
+    "openpyxl>=3.1",   # .xlsx read
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+hackathon = "hackathon.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

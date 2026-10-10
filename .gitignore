@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Secrets / local config
+.env
+*.local.yaml
+
+# Data (keep folder structure, never commit datasets)
+data/raw/*
+data/interim/*
+data/processed/*
+!data/**/.gitkeep
+
+# Outputs and logs
+logs/
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
