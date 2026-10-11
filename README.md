@@ -66,15 +66,23 @@ The primary implementation runs the seven supplied source files through bronze, 
 quarantine, quality gates, and gold dimensional tables in SQLite:
 
 ```powershell
-.venv\Scripts\python.exe -m hackathon.medallion
-.venv\Scripts\python.exe -m hackathon.medallion.kpis
+.venv\Scripts\python.exe -m pip install -e ".[dev,dashboard]"
+.venv\Scripts\python.exe -m hackathon.medallion --bq-dataset shopsphere_gold
+.venv\Scripts\python.exe -m hackathon.kpis
+.venv\Scripts\python.exe -m streamlit run src/hackathon/dashboard.py --server.address localhost
 ```
 
-The first command writes `data/processed/shopsphere.db`. The second writes all eight required KPI
-outputs, the optional margin-risk output, and `kpi_manifest.json` to `reports/kpi_outputs/`.
-The manifest records the calculation assumptions.
+1. The pipeline writes `data/processed/shopsphere.db` and loads the gold and quarantine tables into the
+   BigQuery dataset `shopsphere_gold` (project from `GCP_PROJECT_ID` in `.env`; log in once with
+   `gcloud auth application-default login`).
+2. The KPIs are SQL files in [`kpis/bigquery/`](kpis/bigquery/), one per KPI. Each starts with a comment
+   header stating the definition, the data-quality issues resolved first, inclusions and exclusions, and
+   the assumption made wherever the KPI could be computed another way. The runner executes them on
+   BigQuery and writes `outputs/kpis/<name>.csv` plus [`reports/kpi_report.md`](reports/kpi_report.md).
+3. The Streamlit dashboard picks a KPI from a dropdown, shows its header and runs the query live.
 
-BigQuery is optional. Install it only when needed with `pip install -e ".[gcp]"`.
+`python -m hackathon.kpis --engine sqlite` runs the same KPIs offline from [`kpis/`](kpis/) (SQLite
+dialect) against the local database; the tests use this path.
 
 ## License
 

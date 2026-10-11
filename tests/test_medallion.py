@@ -2,11 +2,15 @@ import csv
 import json
 import sqlite3
 from decimal import Decimal
+from pathlib import Path
 
+from hackathon.kpis import run_sqlite_kpis
 from hackathon.medallion.common import parse_amount, parse_date
 from hackathon.medallion.gold import UNKNOWN_KEY, build_gold
-from hackathon.medallion.kpis import calculate_kpis
 from hackathon.medallion.run import run_pipeline
+from hackathon.medallion.silver import infer_categories
+
+SQL_DIR = Path(__file__).resolve().parents[1] / "kpis"
 
 
 def _write_csv(path, columns, rows):
@@ -21,6 +25,21 @@ def test_common_parsers_handle_source_formats():
     assert parse_date("26/11/2022") == "2022-11-26"
     assert parse_date("11/26/2022") == "2022-11-26"
     assert parse_date("not-a-date") is None
+
+
+def test_blank_category_inferred_only_when_sub_category_is_unambiguous():
+    products = [
+        {"product_id": "P1", "category": "Sports", "sub_category": "Fitness"},
+        {"product_id": "P2", "category": "Unknown", "sub_category": "Fitness"},
+        {"product_id": "P3", "category": "Fashion", "sub_category": "Shoes"},
+        {"product_id": "P4", "category": "Sports", "sub_category": "Shoes"},
+        {"product_id": "P5", "category": "Unknown", "sub_category": "Shoes"},
+        {"product_id": "P6", "category": "Unknown", "sub_category": None},
+    ]
+    infer_categories(products)
+    assert [(p["category"], p["category_inferred"]) for p in products] == [
+        ("Sports", 0), ("Sports", 1), ("Fashion", 0), ("Sports", 0), ("Unknown", 0),
+        ("Unknown", 0)]
 
 
 def test_gold_uses_unknown_product_for_orphan_return():
@@ -181,26 +200,23 @@ def test_medallion_pipeline_and_kpis(tmp_path):
     first_run = run_pipeline(input_dir=source, db_path=db_path, batch_id="test_batch")
     second_run = run_pipeline(input_dir=source, db_path=db_path, batch_id="test_batch")
     assert first_run["counts"] == second_run["counts"]
-    results = calculate_kpis(db_path, return_rate_min_volume=1, repeat_window_days=90)
+    # The real pipeline stores money as TEXT in SQLite, so this also guards the SQL casts.
+    out = tmp_path / "kpis"
+    run_sqlite_kpis(db_path, SQL_DIR, out, tmp_path / "kpi_report.md")
 
-    assert results["net_revenue_by_category_month"] == [
-        {
-            "category": "Electronics",
-            "month": "2024-01",
-            "gross_revenue": 20.0,
-            "refunds": 10.0,
-            "net_revenue": 10.0,
-        },
-        {
-            "category": "Electronics",
-            "month": "2024-02",
-            "gross_revenue": 10.0,
-            "refunds": 0.0,
-            "net_revenue": 10.0,
-        },
-    ]
-    assert results["top_customers_by_ltv"][0]["net_lifetime_value"] == 20.0
-    assert results["repeat_purchase_rate"][0]["repeat_purchase_rate_pct"] == 100.0
-    assert {row["status"] for row in results["payment_reconciliation"]} == {"MATCH"}
+    def read(name):
+        with open(out / f"{name}.csv", encoding="utf-8") as f:
+            return list(csv.DictReader(f))
+
+    revenue = [(r["order_month"], r["category"], float(r["gross_revenue"]), float(r["refunds"]),
+                float(r["net_revenue"])) for r in read("kpi_01_net_revenue_category_month")]
+    assert revenue == [("2024-01", "Electronics", 20.0, 10.0, 10.0),
+                       ("2024-02", "Electronics", 10.0, 0.0, 10.0)]
+    assert float(read("kpi_02_top_customers_net_ltv")[0]["net_lifetime_value"]) == 20.0
+    full_window, all_customers = read("kpi_07_repeat_purchase_rate")
+    assert (full_window["cohort"], full_window["customers_denominator"]) == ("FULL_WINDOW", "0")
+    assert float(all_customers["repeat_rate_pct"]) == 100.0
+    assert {r["reconciliation_status"] for r in read("kpi_08_payment_reconciliation")} == {
+        "MATCHED"}
     with sqlite3.connect(db_path) as conn:
         assert conn.execute("select count(*) from quality_issues").fetchone()[0] == 0

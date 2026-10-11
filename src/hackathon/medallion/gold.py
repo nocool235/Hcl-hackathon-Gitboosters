@@ -47,6 +47,7 @@ GOLD_COLUMNS = {
         "product_id",
         "product_name",
         "category",
+        "category_inferred",
         "sub_category",
         "unit_price",
         "cost_price",

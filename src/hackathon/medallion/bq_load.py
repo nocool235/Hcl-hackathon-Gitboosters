@@ -1,8 +1,3 @@
-"""Optional: load the gold tables from SQLite into a BigQuery dataset.
-
-Only called when --bq-dataset is given, after the local run succeeded (so gates have passed).
-Needs Application Default Credentials: `gcloud auth application-default login`.
-"""
 
 from __future__ import annotations
 
@@ -10,6 +5,7 @@ import logging
 
 from hackathon.medallion import db
 from hackathon.medallion.gold import GOLD_COLUMNS
+from hackathon.medallion.silver import QUARANTINE_COLUMNS
 
 log = logging.getLogger("hackathon.medallion.bq")
 
@@ -38,6 +34,7 @@ NUMERIC_COLUMNS = {
 }
 INT_COLUMNS = {"quantity", "year", "quarter", "month", "day", "rating_scale_max"}
 BOOL_COLUMNS = {
+    "category_inferred",
     "is_active",
     "is_preferred",
     "is_current",
@@ -71,6 +68,8 @@ def bq_type(column: str) -> str:
 
 
 def schema_for(table: str) -> list[tuple[str, str]]:
+    if table.startswith("quarantine_"):
+        return [(c, "INT64" if c == "_row_number" else "STRING") for c in QUARANTINE_COLUMNS]
     return [(c, bq_type(c)) for c in GOLD_COLUMNS[table]]
 
 
@@ -86,7 +85,7 @@ def convert_row(row: dict, schema: list[tuple[str, str]]) -> dict:
 def load_gold(
     db_path: str, dataset: str, project: str | None = None, location: str = "US", client=None
 ) -> dict[str, int]:
-    """Load every gold table into `dataset` (WRITE_TRUNCATE, so reruns do not duplicate)."""
+    """Load every gold and quarantine table into `dataset` (WRITE_TRUNCATE, no duplicates)."""
     from google.cloud import bigquery  # imported here so the core pipeline never needs it
 
     from hackathon.stages.bigquery import get_client
@@ -99,7 +98,8 @@ def load_gold(
     conn = db.connect(db_path)
     loaded = {}
     try:
-        for table in GOLD_COLUMNS:
+        quarantine = [t for t in db.table_names(conn) if t.startswith("quarantine_")]
+        for table in [*GOLD_COLUMNS, *quarantine]:
             schema = schema_for(table)
             rows = [convert_row(r, schema) for r in db.read_rows(conn, table)]
             job_config = bigquery.LoadJobConfig(

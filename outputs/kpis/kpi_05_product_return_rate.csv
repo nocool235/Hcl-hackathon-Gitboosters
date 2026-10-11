@@ -1,0 +1,21 @@
+ranking,rank_in_list,product_id,product_name,category,ordered_qty,returned_qty,return_rate_pct,returns,returns_unknown_qty,products_qualifying
+TOP,1,P018,Team Sports Item 18,Sports,14,4.9236,35.17,1,0,65
+TOP,2,P045,Footwear Item 45,Fashion,13,3.4739,26.72,1,0,65
+TOP,3,P057,Team Sports Item 57,Sports,28,7.2089,25.75,2,0,65
+TOP,4,P069,Mobiles Item 69,Electronics,12,2.5947,21.62,1,0,65
+TOP,5,P034,Fitness Item 34,Sports,25,5.3203,21.28,2,0,65
+TOP,6,P029,Furniture Item 29,Home & Kitchen,28,5.7426,20.51,2,0,65
+TOP,7,P052,Womenswear Item 52,Fashion,24,4.2061,17.53,1,0,65
+TOP,8,P067,Appliances Item 67,Home & Kitchen,20,3.4464,17.23,1,0,65
+TOP,9,P040,Footwear Item 40,Fashion,31,4.8326,15.59,1,0,65
+TOP,10,P009,Furniture Item 9,Home & Kitchen,23,3.3303,14.48,1,0,65
+BOTTOM,1,P061,Furniture Item 61,Home & Kitchen,51,0,0,0,0,65
+BOTTOM,2,P012,Menswear Item 12,Fashion,40,0,0,0,0,65
+BOTTOM,3,P031,Accessories Item 31,Electronics,39,0,0,0,0,65
+BOTTOM,4,P068,Staples Item 68,Grocery,37,0,0,0,0,65
+BOTTOM,5,P021,Fitness Item 21,Sports,35,0,0,1,1,65
+BOTTOM,6,P002,Furniture Item 2,Home & Kitchen,33,0,0,0,0,65
+BOTTOM,7,P016,Footwear Item 16,Fashion,32,0,0,0,0,65
+BOTTOM,8,P041,Cookware Item 41,Home & Kitchen,32,0,0,0,0,65
+BOTTOM,9,P055,Staples Item 55,Grocery,32,0,0,0,0,65
+BOTTOM,10,P004,Appliances Item 4,Home & Kitchen,30,0,0,0,0,65

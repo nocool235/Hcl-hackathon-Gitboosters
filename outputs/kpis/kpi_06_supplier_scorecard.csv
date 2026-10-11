@@ -1,0 +1,19 @@
+scorecard_rank,supplier_id,supplier_name,is_preferred,products,products_sold,products_rated,net_revenue,avg_product_return_rate_pct,rating_raw,rating_scale,revenue_score,return_score,rating_score,components_used,composite_score
+1,S007,"Biswas, Karpe and Radhakrishnan",False,6,6,6,1839381.73,0,4.2,5,0.8392,1,0.84,3,0.8877
+2,S006,"Lalla, Ganesh and Oommen",False,9,8,7,2191898.43,4.1,7.5,10,1,0.8073,0.75,3,0.8672
+3,S015,"Chaudhari, Sandal and Desai",False,4,4,4,1821770.44,1.88,4.1,5,0.8311,0.9116,0.82,3,0.8519
+4,S004,"Sinha, Subramaniam and Garde",True,4,4,4,1612831.39,5.8,9.4,10,0.7358,0.7274,0.94,3,0.7945
+5,S005,Dhar-Gopal,True,2,2,1,830441.17,0,4.5,5,0.3789,1,0.9,3,0.7215
+6,S001,"Baral, Din and Bhalla",False,3,3,3,1283272.11,6.74,4.3,5,0.5855,0.6831,0.86,3,0.6971
+7,S018,"Amble, Virk and Dalal",False,4,4,4,615765.99,1.89,5,5,0.2809,0.9111,1,3,0.6857
+8,S009,"Saini, Doctor and Char",False,2,2,2,657783.34,0,4,5,0.3001,1,0.8,3,0.66
+9,S014,Raj-Palla,True,5,5,5,1166889.05,1.82,2.5,5,0.5324,0.9145,0.5,3,0.6373
+10,S008,Babu and Sons,False,2,2,2,611245.71,0,3.7,5,0.2789,1,0.74,3,0.6335
+11,S003,"Bahl, Mander and Chada",False,4,4,4,851431.4,0,2.9,5,0.3884,1,0.58,3,0.6294
+12,S012,"Zacharia, Agarwal and Sankar",False,5,5,5,1387406.72,7.71,3,5,0.633,0.6375,0.6,3,0.6244
+13,S010,"Barad, Wali and Thakur",False,3,3,3,451335.49,4.66,4.9,5,0.2059,0.781,0.98,3,0.6107
+14,S002,Varughese Group,False,3,3,3,908542.34,5.86,2.5,5,0.4145,0.7248,0.5,3,0.5332
+15,S013,Bassi-Wagle,True,4,4,3,719371.51,0,1.6,5,0.3282,1,0.32,3,0.5273
+16,S016,Chacko LLC,False,1,1,1,343046.92,13.82,7.7,10,0.1565,0.3505,0.77,3,0.3988
+17,S011,Subramaniam Ltd,False,4,4,3,571342.4,17.47,3.3,5,0.2607,0.1792,0.66,3,0.356
+18,S017,"Rege, Kurian and Gulati",True,1,1,1,231513.82,21.28,2.7,5,0.1056,0,0.54,3,0.2042

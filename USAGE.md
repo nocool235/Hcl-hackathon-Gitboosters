@@ -1,7 +1,7 @@
 # Usage: what is used, why, and how it beats the alternatives
 
 > This file is kept up to date with every change made to the repo.
-> Last updated: 2026-10-11 (added the ShopSphere medallion pipeline in `src/hackathon/medallion/`; renamed suppliers file to `suppliers.json`).
+> Last updated: 2026-10-11 (added KPI SQL files and the KPI runner; see "KPIs" below).
 
 ## Runtime dependencies
 
@@ -133,23 +133,97 @@ The load runs only after the local run succeeded (gates passed). If it fails the
 Validated with a configured BigQuery project: row counts matched SQLite and a rerun did not duplicate rows.
 
 Config keys (`medallion:` in `config/config.yaml`): `input_dir`, `db_path`, `batch_id`, `reference_date` (null = latest order date), `return_rate_min_volume`, `payment_tolerance`, `repeat_window_days`, `bq_dataset` (null = no load), `bq_location`. Each has a CLI flag.
-Implemented: KPI calculations and CSV outputs in `src/hackathon/medallion/kpis.py`, medallion
-integration tests in `tests/test_medallion.py`, quality issue audit rows, and the project README.
-The optional margin-risk report is also generated as KPI 9.
+The BigQuery load also copies the seven `quarantine_*` tables (all STRING columns, `_row_number` INT64), so the
+rejected rows can be inspected in BigQuery and KPI 8 can count the duplicate payment rows removed in silver.
+Medallion integration tests: [`tests/test_medallion.py`](tests/test_medallion.py) (runs the pipeline on a synthetic
+fixture, then the SQL KPIs on its output).
 
-Calculate KPIs after a successful medallion run:
+---
+
+## KPIs (`kpis/` + `src/hackathon/kpis.py`)
+
+KPIs exist once, as SQL. The earlier Python implementation (`hackathon.medallion.kpis`, `reports/kpi_outputs/`)
+was removed so there is a single set of numbers.
+
+KPIs are plain SQL over the gold tables (not pandas), one file per KPI. Each file starts with `--` comment lines
+(title, then `Label: text` entries); the runner and the dashboard read that header as the KPI's description.
+As the problem statement asks, every header has a **`Data quality:`** entry (the data-quality issues resolved
+before computing the metric, in silver or in the query) and an **`Alternatives:`** entry (the other reasonable ways
+to compute it and why this one was chosen), next to the definition, inclusions, exclusions and assumptions.
+
+| File | Output |
+|---|---|
+| [`kpi_01_net_revenue_category_month.sql`](kpis/kpi_01_net_revenue_category_month.sql) | Net revenue by category and order month (refunds in the original order month) |
+| [`kpi_02_top_customers_net_ltv.sql`](kpis/kpi_02_top_customers_net_ltv.sql) | Top 10 customers by net LTV, tie-break order count then `customer_key` |
+| [`kpi_02b_customer_reference_exceptions.sql`](kpis/kpi_02b_customer_reference_exceptions.sql) | Part of KPI 2, not a separate KPI: orphaned and near-duplicate customer references kept out of the ranking (count and value), shown under the KPI 2 ranking in the dashboard |
+| [`kpi_03_customer_segment_profile.sql`](kpis/kpi_03_customer_segment_profile.sql) | Customers and AOV per standardised segment |
+| [`kpi_04_channel_mom_growth.sql`](kpis/kpi_04_channel_mom_growth.sql) | Month-over-month volume and net revenue growth per channel (`LAG()`, full month calendar, NULL + flag when prior month is 0) |
+| [`kpi_05_product_return_rate.sql`](kpis/kpi_05_product_return_rate.sql) | Top 10 and bottom 10 product return rates above the minimum volume |
+| [`kpi_06_supplier_scorecard.sql`](kpis/kpi_06_supplier_scorecard.sql) | Supplier revenue, average return rate, rating normalised on its own scale (> 5 = out of 10, else out of 5); composite 0.40 / 0.30 / 0.30 |
+| [`kpi_07_repeat_purchase_rate.sql`](kpis/kpi_07_repeat_purchase_rate.sql) | Repeat-purchase rate; full 90-day window cohort is primary, all customers for comparison |
+| [`kpi_08_payment_reconciliation.sql`](kpis/kpi_08_payment_reconciliation.sql) | Per order: successful payments vs order total, under/over-paid, duplicate/conflicting rows (including those quarantined in silver), no payment |
+| [`stretch_margin_risk.sql`](kpis/stretch_margin_risk.sql) | Products sold below cost: affected quantity, revenue and shortfall |
+
+Shared rules (written out in each header): net value = recomputed `line_total` minus **Approved** refunds, each
+capped at its line; KPI 1/4/5/6 and margin risk use Completed + Returned orders; KPI 2/3/7 use `Completed` only.
+### Two engines, one set of KPIs
+
+| Engine | SQL | Runs against | Thresholds come from | Used for |
+|---|---|---|---|---|
+| **`bigquery`** (default) | [`kpis/bigquery/*.sql`](kpis/bigquery/) | `GCP_PROJECT_ID`.`shopsphere_gold` (loaded by `python -m hackathon.medallion --bq-dataset shopsphere_gold`) | `medallion:` config, passed as query parameters `@return_rate_min_volume`, `@payment_tolerance`, `@repeat_window_days`, `@reference_date` | The CSVs, the report, and the Streamlit dashboard |
+| `sqlite` | [`kpis/*.sql`](kpis/) | local `data/processed/shopsphere.db` | the `run_params` table written by the pipeline | Offline runs and the tests (no cloud needed) |
+
+The two folders hold the same KPIs with the same headers; only the dialect differs (`LEAST` vs `MIN(a, b)`,
+`FORMAT_DATE` vs `substr`, `DATE_ADD` vs `date(x, '+N days')`, `COUNTIF`, `SAFE_DIVIDE`). Table names are unqualified;
+the BigQuery runner sets the job's default dataset, so the same SQL works for any dataset name.
+BigQuery stores money as `NUMERIC`. Local gold stores money as TEXT (exact cents), so the SQLite files `CAST` money
+to REAL wherever it is compared (refund cap, margin risk); `tests/test_kpis.py` stores money as TEXT too and fails
+if a cast is removed. Verified 2026-10-11: both engines give identical results on every row of every KPI (within
+one cent of float rounding).
+
+[`kpis.py`](src/hackathon/kpis.py) runs every SQL file in name order, writes `outputs/kpis/<name>.csv` and
+`reports/kpi_report.md` (header bullets plus the first rows of each result). With `sqlite` it opens the database
+read-only, refuses to run if the latest pipeline run failed, and warns if config thresholds changed since gold was built.
 
 ```powershell
-.venv\Scripts\python.exe -m hackathon.medallion.kpis
+.venv\Scripts\python.exe -m pip install -e ".[dev,dashboard]"   # once: streamlit + BigQuery client
+.venv\Scripts\python.exe -m hackathon.medallion --bq-dataset shopsphere_gold   # refresh gold in BigQuery
+.venv\Scripts\python.exe -m hackathon.kpis                  # BigQuery: CSVs + report
+.venv\Scripts\python.exe -m hackathon.kpis --engine sqlite  # offline alternative
 ```
 
-Use `--output-dir` to write results elsewhere. KPI assumptions and output row counts are recorded
-in `kpi_manifest.json`.
+Verified 2026-10-11 against `gitbooster.shopsphere_gold`: net revenue 18,801,726.41 in both KPI 1 and KPI 4, equal to an
+independent `Decimal` calculation from local gold; KPI 2 top 10 identical to the Python KPIs; margin risk 26 products
+in both. Each query scans about 40 KB; `bigquery.max_bytes_billed` (1 GB) caps every query.
+
+### Streamlit dashboard ([`src/hackathon/dashboard.py`](src/hackathon/dashboard.py))
+
+```powershell
+.venv\Scripts\python.exe -m streamlit run src/hackathon/dashboard.py --server.address localhost
+```
+
+Pick a KPI from the dropdown at the top (the 8 KPIs plus the margin-risk stretch report); the page shows its definition, inclusions and exclusions (from the SQL header), runs the
+BigQuery SQL live and shows the result table, rows and data scanned, a CSV download and the SQL itself. The sidebar
+also sets the dataset and the four thresholds, so you can rerun a KPI with, say, a 30-unit return-rate minimum
+without editing config. Results are cached for 10 minutes ("Clear cached results" forces a rerun).
+`--server.address localhost` keeps the app private to your machine; without it Streamlit also listens on the network.
+Needs the same login as the loader: `GCP_PROJECT_ID` in `.env` and `gcloud auth application-default login`.
+
+Config keys (`kpis:` in `config/config.yaml`, shared with the Python KPIs): `engine`, `bq_dataset`, `bq_sql_dir`, `sql_dir`, `sql_output_dir`, `report_path`, `head_rows`; for `sqlite` the database is `kpis.db_path` (falls back to `medallion.db_path`). `output_dir` belongs to the Python KPIs.
+Tests: [`tests/test_kpis.py`](tests/test_kpis.py) builds a tiny gold database (no real data needed) and checks refund capping, Cancelled exclusion, tie-break, exceptions, the zero-prior-month rule, that every SQL file has a header, that every SQLite KPI has a BigQuery twin with the same title, and threshold precedence.
 
 ---
 
 ## Change log
 
+- 2026-10-11: Silver now fills a blank product category from its sub-category when the sub-category maps to exactly one category (`infer_categories` in `silver.py`; new `category_inferred` flag on silver/gold products, a BOOL in BigQuery, and `CATEGORY_INFERRED` rows in `quality_issues`). 5 products fixed; KPI 1 `Unknown` fell from ~₹2.0M (39 lines) to ₹119,345 (5 lines for product ids missing from the product file); total net revenue unchanged. BigQuery reloaded. DECISIONS.md #24.
+
+- 2026-10-11: One KPI implementation: removed `src/hackathon/medallion/kpis.py` and `reports/kpi_outputs/`; `hackathon-kpis` console script, README, docs and `tests/test_medallion.py` now use the SQL runner; `kpis.output_dir` config key removed. Corrected the SQL KPIs: every header now has `Data quality:` and `Alternatives:` entries; KPI 6 normalises each supplier rating on its own scale (> 5 = out of 10, else out of 5) instead of dividing all by 10; KPI 8 counts duplicate and conflicting payment rows quarantined in silver; SQLite files cast TEXT money (refund cap and margin risk were wrong). `bq_load.py` now also loads the `quarantine_*` tables. DECISIONS.md #17-#19 rewritten, #21-#23 added.
+
+- 2026-10-11: Dashboard KPI picker is now a dropdown; the KPI 2 companion query (excluded customer references) shows inside the KPI 2 page instead of as its own KPI, and its title is now "KPI 2 (companion)". KPI 6 is no longer labelled stretch (it is one of the 8 required KPIs; only margin risk is optional).
+- 2026-10-11: KPIs now run on BigQuery. Added `kpis/bigquery/*.sql` (BigQuery dialect, thresholds as query parameters), a `bigquery` engine in `src/hackathon/kpis.py` (now the default; `--engine sqlite` keeps the offline path), `engine` / `bq_dataset` / `bq_sql_dir` config keys, the Streamlit dashboard `src/hackathon/dashboard.py`, and a `dashboard` extra in `pyproject.toml` (streamlit, BigQuery client).
+
+- 2026-10-11: Added SQL KPIs: 10 SQL files in `kpis/` (KPIs 1-8 incl. 2b, supplier scorecard, margin risk), runner `src/hackathon/kpis.py` (`python -m hackathon.kpis`, writes `outputs/kpis/*.csv` and `reports/kpi_report.md`), `tests/test_kpis.py`, and `sql_dir` / `sql_output_dir` / `report_path` / `head_rows` in the shared `kpis:` config block. Merged with the upstream Python KPIs (`hackathon.medallion.kpis`); both are kept.
 - 2026-10-11: Added `medallion/bq_load.py`, `--bq-dataset` / `--bq-location` flags and `bq_dataset` / `bq_location` config keys (optional gold load to BigQuery).
 - 2026-10-11: Renamed `data/raw/.../suppliers_json.txt` to `suppliers.json` (contents unchanged). Added `src/hackathon/medallion/` (bronze, silver, quarantine, gates, gold, audit log), `medallion:` block in `config/config.yaml`, `*.db`/`credentials*.json` in `.gitignore`, `docs/data_model.md`, `docs/DECISIONS.md`, `reports/profiling_report.md`.
 

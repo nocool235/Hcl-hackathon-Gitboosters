@@ -1,0 +1,11 @@
+ltv_rank,customer_id,customer_key,customer_name,customer_segment,completed_orders,net_lifetime_value
+1,C0118,260888476431569,Utkarsh Bhat,Gold,3,532447.01
+2,C0107,168312992229569,Eesha Sethi,Silver,2,463604.51
+3,C0061,204054093418395,Yadavi Bhakta,Platinum,2,341730.61
+4,C0148,206460803151188,Ucchal Thaker,Bronze,3,329199.64
+5,C0142,63843893294064,Zansi Prasad,Platinum,4,328510.37
+6,C0001,129200680737809,Isaac Bakshi,Bronze,4,302064
+7,C0085,173802208651783,Chakrika Koshy,Silver,3,291047.36
+8,C0033,100961223590592,Hamsini Rao,Gold,2,268013.97
+9,C0129,179502427755416,Siddharth Bains,Platinum,3,265776.18
+10,C0037,52655520243140,Gautam Rana,Gold,2,259380.42

@@ -141,7 +141,7 @@ COLUMNS = {
 FLAGS = {
     "customers": ["signup_date_ambiguous", "signup_date_missing", "dup_group_id"],
     "suppliers": [],
-    "products": ["launch_date_ambiguous", "is_orphan_supplier"],
+    "products": ["launch_date_ambiguous", "is_orphan_supplier", "category_inferred"],
     "orders": ["order_date_ambiguous", "is_orphan_customer", "order_before_signup"],
     "order_items": [
         "line_total_mismatch",
@@ -500,6 +500,20 @@ def add_flags(silver: dict[str, list[dict]]) -> None:
         r["dup_group_id"] = min(group) if len(group) > 1 else None
 
 
+def infer_categories(products: list[dict]) -> None:
+    """Fill an Unknown category from sub_category when every other product with it agrees."""
+    known = defaultdict(set)
+    for r in products:
+        if r["category"] != "Unknown" and r["sub_category"]:
+            known[r["sub_category"]].add(r["category"])
+    for r in products:
+        candidates = known.get(r["sub_category"], set())
+        inferred = r["category"] == "Unknown" and len(candidates) == 1
+        if inferred:
+            r["category"] = next(iter(candidates))
+        r["category_inferred"] = int(inferred)
+
+
 def build_silver(bronze: dict[str, list[dict]]):
     scale = detect_rating_scale([r["rating"] for r in bronze["suppliers"]])
     cleaners = {
@@ -514,6 +528,7 @@ def build_silver(bronze: dict[str, list[dict]]):
     silver, quarantine, stats = {}, {}, {}
     for entity, cleaner in cleaners.items():
         silver[entity], quarantine[entity] = process_entity(entity, bronze[entity], cleaner)
+    infer_categories(silver["products"])  # after de-duplication, so it cannot change a winner
     add_flags(silver)
     for entity in cleaners:
         reasons = defaultdict(int)

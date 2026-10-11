@@ -35,5 +35,12 @@ medallion:              # ShopSphere pipeline: python -m hackathon.medallion
   bq_location: US              # dataset location, used when the dataset is created
 
 kpis:
-  db_path: data/processed/shopsphere.db
-  output_dir: reports/kpi_outputs
+  # python -m hackathon.kpis   |   UI: streamlit run src/hackathon/dashboard.py
+  db_path: data/processed/shopsphere.db   # used by the sqlite engine
+  engine: bigquery                  # bigquery (gold dataset below) or sqlite (local db_path)
+  bq_dataset: shopsphere_gold       # project comes from GCP_PROJECT_ID in .env
+  bq_sql_dir: kpis/bigquery         # BigQuery-dialect SQL; thresholds come from medallion: as @params
+  sql_dir: kpis                     # SQLite-dialect SQL; leading -- lines are each KPI's description
+  sql_output_dir: outputs/kpis      # one <name>.csv per SQL file
+  report_path: reports/kpi_report.md
+  head_rows: 10                     # rows of each result shown in the report

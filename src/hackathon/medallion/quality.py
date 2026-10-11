@@ -10,6 +10,7 @@ class GateFailure(Exception):
 ISSUE_COLUMNS = ["entity", "record_key", "source_row", "issue_code", "severity", "detail"]
 ROW_FLAGS = {
     "signup_date_ambiguous", "signup_date_missing", "dup_group_id", "launch_date_ambiguous",
+    "category_inferred",
     "is_orphan_supplier", "order_date_ambiguous", "is_orphan_customer", "order_before_signup",
     "line_total_mismatch", "is_orphan_order", "is_orphan_product",
     "order_before_product_launch", "payment_date_ambiguous", "payment_date_missing",

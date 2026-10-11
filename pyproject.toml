@@ -25,10 +25,15 @@ gcp = [
     "google-cloud-bigquery>=3.40",
     "db-dtypes>=1.2",
 ]
+dashboard = [
+    "streamlit>=1.38",
+    "google-cloud-bigquery>=3.40",
+    "db-dtypes>=1.2",
+]
 
 [project.scripts]
 hackathon = "hackathon.main:main"
-hackathon-kpis = "hackathon.medallion.kpis:main"
+hackathon-kpis = "hackathon.kpis:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

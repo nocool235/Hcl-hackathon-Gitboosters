@@ -294,5 +294,5 @@ Secrets (`GCP_PROJECT_ID`, `LOG_LEVEL`) go in `.env` — loaded by `python-doten
 | Add a new source file format | Add one entry to the `READERS` dict in [`ingest.py`](../src/hackathon/stages/ingest.py) |
 | Add a medallion entity | Add source definition in [`bronze.py`](../src/hackathon/medallion/bronze.py) `SOURCES`, add a cleansing function in [`silver.py`](../src/hackathon/medallion/silver.py), add gold table in [`gold.py`](../src/hackathon/medallion/gold.py) |
 | Switch from SQLite to Postgres | Replace [`db.py`](../src/hackathon/medallion/db.py) — it's the only module that touches the database |
-| Add KPI logic | Add a calculation and output contract in `medallion/kpis.py`, then cover it with a gold-fixture test |
+| Add a KPI | Add `kpis/bigquery/<name>.sql` and its SQLite twin `kpis/<name>.sql`, each starting with a `--` header (definition, data quality, inclusions, exclusions, alternatives); the runner and dashboard pick it up automatically. Cover it in `tests/test_kpis.py` |
 | Move to cloud orchestration | Each stage/module function can be lifted into Airflow/Prefect tasks as-is |

@@ -74,9 +74,11 @@ hcl-hackathon-starter/
 │   ├── design.md                # Design decisions and patterns
 │   ├── data_model.md            # Gold star schema reference
 │   └── DECISIONS.md             # Numbered decision log
+├── kpis/                        # KPI SQL: bigquery/ (main) and SQLite twins; header = description
+├── outputs/kpis/                # Generated KPI CSVs (python -m hackathon.kpis)
 ├── reports/
-│   └── profiling_report.md      # Source data profiling results
-├── reports/kpi_outputs/         # Generated KPI CSVs and manifest
+│   ├── profiling_report.md      # Source data profiling results
+│   └── kpi_report.md            # Generated KPI report (definitions + result heads)
 ├── notebooks/                   # Exploration notebooks
 ├── src/hackathon/
 │   ├── config.py                # YAML + .env loader
