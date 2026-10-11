@@ -16,7 +16,7 @@
 | `payments.csv` | CSV | 329 | 6 | — |
 | `products.csv` | CSV | 75 | 9 | — |
 | `returns.csv` | CSV | 68 | 6 | — |
-| `suppliers_json.txt` | JSON (array) | 19 | 6 | **Not** `.json` extension — treated as JSON |
+| `suppliers.json` | JSON (array) | 19 | 6 | JSON array from the procurement source |
 
 ---
 
@@ -101,7 +101,7 @@
 | refund_amount | **4 null** | 64 | **4 refunds exceed computed line value** |
 | return_status | 0 | 6 | Variants: Approved/APPROVED/approved/Rejected/rejected/Pending |
 
-### 2.7 suppliers_json.txt
+### 2.7 suppliers.json
 
 | Column | Nulls/Blank | Distinct | Key findings |
 |--------|-------------|----------|--------------|
@@ -152,16 +152,16 @@ Slash-delimited dates (`XX/XX/YYYY`) appear in **orders, payments, products, cus
 
 **The orphan keys all follow a consistent pattern (4-digit suffix `9XXX`) suggesting they are test or migrated records not in this data extract.**
 
-### 3.4 Business rule violations (quarantine)
+### 3.4 Business rule outcomes
 
 | Rule | Count | Entity | Action |
 |------|-------|--------|--------|
 | Non-positive quantity (`quantity ≤ 0`) | 10 | order_items | Quarantine |
 | Negative unit_price | 10 | order_items | Quarantine (all linked to P003 conflicting dup) |
 | Discount outside 0–100% | 7 | order_items | Quarantine |
-| Non-positive product unit_price | 4 | products | Quarantine |
-| Refund > computed line value | 4 | returns | Quarantine |
-| `line_total` mismatch > 0.01 | 51 | order_items | Recompute; keep source value |
+| Non-positive product unit_price | 4 | products | Flag in silver; retain product |
+| Refund > computed line value | 4 | returns | Flag in silver; retain return |
+| `line_total` mismatch > 0.01 | 51 raw / 29 silver | order_items | Recompute; keep source value |
 
 ### 3.5 Categorical standardization targets
 
@@ -248,7 +248,7 @@ Rule: `ROUND(quantity × unit_price × (1 − discount_pct/100), 2)` using `Deci
 ### Returned quantity
 `returns.csv` has no `returned_quantity` column.  
 Proposed rule: **assume the full ordered quantity** for each returned order line.  
-Rationale: the refund amount in most cases matches or approaches the full line value. 4 exceptions (refund > line value) will be quarantined.  
+Rationale: the refund amount in most cases matches or approaches the full line value. Four excessive refunds are flagged and capped for KPI calculations.
 (See DECISIONS.md §5.)
 
 ---
@@ -264,8 +264,9 @@ Rationale: the refund amount in most cases matches or approaches the full line v
 - Refunds above line value are **flagged**, not quarantined (#11). Products with price <= 0 are flagged, not quarantined (#5).
 - Real orders exist from 2020-2022 (6) and two signups are dated 2027; kept (#13).
 
-## 7. Missing problem statement document
-`docs/Ecommerce_Analytics_Usecase.docx` was not found in the repository. The pasted brief is the authoritative problem statement.
+## 7. Problem statement document
+The supplied problem statement is maintained outside the repository. The repository documentation and
+AI usage log summarize the requirements used for implementation.
 
 ---
 
@@ -282,7 +283,7 @@ Rationale: the refund amount in most cases matches or approaches the full line v
 9. **Conflicting duplicates**: prefer most complete / latest-named row; tiebreak = lowest source row number
 10. **Customer near-duplicates**: after email normalization, 5 dup keys collapse to exact dups → de-duplicate by lowest row
 11. **Orphan FKs**: keep all rows; set `is_orphan_<entity>` flag
-12. **Quarantine**: non-positive qty, negative price, discount out of range, refund > line value
+12. **Quarantine**: non-positive qty, negative price, discount out of range; excessive refunds and invalid product list prices are retained with warning flags
 13. **Recompute `line_total`**: using `Decimal(ROUND_HALF_UP)`; preserve source as `source_line_total`
 14. **Returned quantity**: full ordered quantity; flag 4 excessive-refund rows
 15. **Phone**: strip all non-digit characters
@@ -290,4 +291,11 @@ Rationale: the refund amount in most cases matches or approaches the full line v
 
 ---
 
-*Next: await Phase 1 review, then proceed to Phase 2 (Bronze + Silver).*
+The profiling findings are implemented by the bronze/silver/gold pipeline and covered by integration tests.
+
+## 9. Current pipeline validation
+
+The supplied files currently produce 1,779 bronze rows, 1,721 silver rows, and 58 quarantined rows
+across the seven entities. The run also records 568 row-level quality issues, including retained
+foreign-key or temporal warnings, in `quality_issues`. Gold contains 320 orders, 765 order items,
+325 payments, and 65 returns. All quality gates pass before gold tables are written.

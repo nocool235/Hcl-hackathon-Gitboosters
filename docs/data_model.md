@@ -15,7 +15,7 @@ QUARANTINE quarantine_<entity>  rejected + losing-duplicate rows: raw JSON, key,
         |  gates: reconciliation, unique keys, no non-positive quantity
         v
 GOLD     dim_*, fact_*          star schema (built in memory, gated, then written)
-AUDIT    pipeline_runs, quality_gate_results, run_params
+AUDIT    pipeline_runs, quality_gate_results, run_params, quality_issues
 ```
 
 Code: `src/hackathon/medallion/` (`bronze.py`, `silver.py`, `quality.py`, `gold.py`, `run.py`, `db.py`, `common.py`).
@@ -37,6 +37,7 @@ Every run drops and rebuilds all tables except `pipeline_runs`, so reruns give i
 Surrogate keys are SHA-1 hashes of the natural key, so the same input always yields the same key.
 Each dimension has an `Unknown` member with key `-1`. Orphans (e.g. an order whose customer is not in the
 customer file) get key `-1` and keep the source id in `customer_id_source`; they are flagged, never dropped.
+Orphan returns also use the unknown product key rather than a nullable dimension key.
 
 ## SCD Type 2 (honest note)
 `customers.csv` is a single snapshot, so every customer has exactly one version
@@ -47,4 +48,8 @@ A point-in-time join is `fact_orders.order_date BETWEEN valid_from AND valid_to`
 Today `fact_orders` joins to the current version only.
 
 To print the exact DDL: `sqlite3 data/processed/shopsphere.db ".schema"` (or `SELECT sql FROM sqlite_master`).
-Column lists are in `GOLD_COLUMNS` in `gold.py`.
+Column lists are in `GOLD_COLUMNS` in `gold.py`. SQLite gold dimensions and facts have primary keys;
+safe dimension foreign keys are enforced by SQLite, while intentionally orphaned natural-key links are
+retained through the unknown-member pattern.
+Monetary values are calculated with `Decimal` and stored as exact decimal text in SQLite; the
+optional BigQuery loader maps those columns to `NUMERIC`.

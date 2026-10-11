@@ -13,21 +13,56 @@ from hackathon.medallion.gold import GOLD_COLUMNS
 
 log = logging.getLogger("hackathon.medallion.bq")
 
-DATE_COLUMNS = {"date", "order_date", "payment_date", "return_date", "signup_date", "valid_from",
-                "valid_to", "contract_start_date", "launch_date"}
-FLOAT_COLUMNS = {"unit_price", "cost_price", "discount_pct", "line_total", "source_line_total",
-                 "amount", "refund_amount", "returned_quantity", "rating_raw", "rating_norm"}
+DATE_COLUMNS = {
+    "date",
+    "order_date",
+    "payment_date",
+    "return_date",
+    "signup_date",
+    "valid_from",
+    "valid_to",
+    "contract_start_date",
+    "launch_date",
+}
+NUMERIC_COLUMNS = {
+    "unit_price",
+    "cost_price",
+    "discount_pct",
+    "line_total",
+    "source_line_total",
+    "amount",
+    "refund_amount",
+    "returned_quantity",
+    "rating_raw",
+    "rating_norm",
+}
 INT_COLUMNS = {"quantity", "year", "quarter", "month", "day", "rating_scale_max"}
-BOOL_COLUMNS = {"is_active", "is_preferred", "is_current", "is_weekend", "line_total_mismatch",
-                "refund_exceeds_line", "return_before_order"}
+BOOL_COLUMNS = {
+    "is_active",
+    "is_preferred",
+    "is_current",
+    "is_weekend",
+    "line_total_mismatch",
+    "refund_exceeds_line",
+    "return_before_order",
+    "signup_date_ambiguous",
+    "signup_date_missing",
+    "launch_date_ambiguous",
+    "order_date_ambiguous",
+    "order_before_signup",
+    "order_before_product_launch",
+    "payment_date_ambiguous",
+    "payment_date_missing",
+    "payment_before_order",
+}
 
 
 def bq_type(column: str) -> str:
     """Explicit type per column name, so BigQuery never guesses (dates are real DATEs)."""
     if column in DATE_COLUMNS:
         return "DATE"
-    if column in FLOAT_COLUMNS:
-        return "FLOAT64"
+    if column in NUMERIC_COLUMNS:
+        return "NUMERIC"
     if column in BOOL_COLUMNS or column.startswith("is_orphan_"):
         return "BOOL"
     if column in INT_COLUMNS or column.endswith("_key"):
@@ -48,8 +83,9 @@ def convert_row(row: dict, schema: list[tuple[str, str]]) -> dict:
     return out
 
 
-def load_gold(db_path: str, dataset: str, project: str | None = None, location: str = "US",
-              client=None) -> dict[str, int]:
+def load_gold(
+    db_path: str, dataset: str, project: str | None = None, location: str = "US", client=None
+) -> dict[str, int]:
     """Load every gold table into `dataset` (WRITE_TRUNCATE, so reruns do not duplicate)."""
     from google.cloud import bigquery  # imported here so the core pipeline never needs it
 

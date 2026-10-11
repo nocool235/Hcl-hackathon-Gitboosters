@@ -7,6 +7,16 @@ class GateFailure(Exception):
     """Raised when a quality gate fails; the run stops and no gold is built."""
 
 
+ISSUE_COLUMNS = ["entity", "record_key", "source_row", "issue_code", "severity", "detail"]
+ROW_FLAGS = {
+    "signup_date_ambiguous", "signup_date_missing", "dup_group_id", "launch_date_ambiguous",
+    "is_orphan_supplier", "order_date_ambiguous", "is_orphan_customer", "order_before_signup",
+    "line_total_mismatch", "is_orphan_order", "is_orphan_product",
+    "order_before_product_launch", "payment_date_ambiguous", "payment_date_missing",
+    "payment_before_order", "is_orphan_item", "refund_exceeds_line", "return_before_order",
+}
+
+
 def _result(gate: str, entity: str, passed: bool, detail: str = "") -> dict:
     return {"gate": gate, "entity": entity, "passed": int(passed), "detail": detail}
 
@@ -43,8 +53,45 @@ def positive_quantity_gate(silver: dict[str, list[dict]]) -> dict:
     return _result("positive_quantity", "order_items", bad == 0, f"{bad} non-positive rows")
 
 
-def _fk_gate(child: str, col: str, rows: list[dict], parent_keys: set) -> dict:
-    bad = sum(1 for r in rows if r[col] is not None and r[col] not in parent_keys)
+def issue_rows(silver: dict[str, list[dict]], quarantine: dict[str, list[dict]]) -> list[dict]:
+    """Flatten row-level flags and quarantine reasons into an auditable issue table."""
+    key_by_entity = {
+        "customers": "customer_id", "suppliers": "supplier_id", "products": "product_id",
+        "orders": "order_id", "order_items": "order_item_id", "payments": "payment_id",
+        "returns": "return_id",
+    }
+    issues = []
+    for entity, rows in quarantine.items():
+        for row in rows:
+            issues.append({
+                "entity": entity,
+                "record_key": row.get("record_key"),
+                "source_row": row.get("_row_number"),
+                "issue_code": row.get("reason_code"),
+                "severity": "ERROR",
+                "detail": row.get("reason_detail"),
+            })
+    for entity, rows in silver.items():
+        key = key_by_entity[entity]
+        for row in rows:
+            for flag, value in row.items():
+                if flag not in ROW_FLAGS or not value:
+                    continue
+                issues.append({
+                    "entity": entity,
+                    "record_key": row.get(key),
+                    "source_row": row.get("_row_number"),
+                    "issue_code": flag.upper(),
+                    "severity": "WARNING",
+                    "detail": f"{flag}={value}",
+                })
+    return issues
+
+
+def _fk_gate(child: str, col: str, rows: list[dict], parent_keys: set,
+             allow_null: bool = False) -> dict:
+    bad = sum(1 for r in rows if (r[col] is None and not allow_null) or
+              (r[col] is not None and r[col] not in parent_keys))
     return _result("referential_integrity", f"{child}.{col}", bad == 0, f"{bad} unresolved")
 
 
@@ -60,8 +107,12 @@ def gold_gates(gold: dict[str, list[dict]], silver: dict[str, list[dict]]) -> li
     out.append(_fk_gate("fact_orders", "customer_key", gold["fact_orders"], customer_keys))
     out.append(_fk_gate("fact_orders", "order_date_key", gold["fact_orders"], date_keys))
     out.append(_fk_gate("fact_order_items", "product_key", gold["fact_order_items"], product_keys))
-    out.append(_fk_gate("fact_order_items", "order_date_key", gold["fact_order_items"], date_keys))
-    out.append(_fk_gate("fact_payments", "payment_date_key", gold["fact_payments"], date_keys))
+    out.append(_fk_gate(
+        "fact_order_items", "order_date_key",
+        [r for r in gold["fact_order_items"] if not r["is_orphan_order"]], date_keys,
+    ))
+    out.append(_fk_gate("fact_payments", "payment_date_key", gold["fact_payments"], date_keys,
+                        allow_null=True))
     out.append(_fk_gate("fact_returns", "product_key", gold["fact_returns"], product_keys))
     out.append(_fk_gate("fact_returns", "return_date_key", gold["fact_returns"], date_keys))
     out.append(_fk_gate("dim_product", "supplier_key", gold["dim_product"], supplier_keys))

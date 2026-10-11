@@ -124,23 +124,34 @@ Run (PowerShell, from the project root):
 Load gold into BigQuery (optional; needs `gcloud auth application-default login` and `GCP_PROJECT_ID` in `.env` or the environment):
 
 ```powershell
-$env:GCP_PROJECT_ID = "gitbooster"      # or set it in .env
+$env:GCP_PROJECT_ID = "your-gcp-project-id"      # or set it in .env
 .venv\Scripts\python.exe -m hackathon.medallion --bq-dataset shopsphere_gold
 # last line printed: bigquery: {'dim_customer': 159, ... 'fact_returns': 65}
 ```
 
 The load runs only after the local run succeeded (gates passed). If it fails the local database is still fine and the exit code is 2.
-Tested 2026-10-11: loaded to `gitbooster.shopsphere_gold` (US); row counts matched SQLite and a rerun did not duplicate rows.
+Validated with a configured BigQuery project: row counts matched SQLite and a rerun did not duplicate rows.
 
 Config keys (`medallion:` in `config/config.yaml`): `input_dir`, `db_path`, `batch_id`, `reference_date` (null = latest order date), `return_rate_min_volume`, `payment_tolerance`, `repeat_window_days`, `bq_dataset` (null = no load), `bq_location`. Each has a CLI flag.
-Not built yet: KPI SQL files, pytest tests for the medallion package, README, dashboard.
+Implemented: KPI calculations and CSV outputs in `src/hackathon/medallion/kpis.py`, medallion
+integration tests in `tests/test_medallion.py`, quality issue audit rows, and the project README.
+The optional margin-risk report is also generated as KPI 9.
+
+Calculate KPIs after a successful medallion run:
+
+```powershell
+.venv\Scripts\python.exe -m hackathon.medallion.kpis
+```
+
+Use `--output-dir` to write results elsewhere. KPI assumptions and output row counts are recorded
+in `kpi_manifest.json`.
 
 ---
 
 ## Change log
 
-- 2026-10-11: Added `medallion/bq_load.py`, `--bq-dataset` / `--bq-location` flags and `bq_dataset` / `bq_location` config keys (optional gold load to BigQuery). Ran it against `gitbooster`, dataset `shopsphere_gold`.
+- 2026-10-11: Added `medallion/bq_load.py`, `--bq-dataset` / `--bq-location` flags and `bq_dataset` / `bq_location` config keys (optional gold load to BigQuery).
 - 2026-10-11: Renamed `data/raw/.../suppliers_json.txt` to `suppliers.json` (contents unchanged). Added `src/hackathon/medallion/` (bronze, silver, quarantine, gates, gold, audit log), `medallion:` block in `config/config.yaml`, `*.db`/`credentials*.json` in `.gitignore`, `docs/data_model.md`, `docs/DECISIONS.md`, `reports/profiling_report.md`.
 
 - 2026-10-10: Initial version. Added `pyarrow` and `openpyxl` to `pyproject.toml` (the ingest stage listed `.parquet` and `.xlsx` but had no engine to read them). Created `.venv`, `README.md`, `LICENSE` (MIT) and this file.
-- 2026-10-11: Changed `GCP_PROJECT_ID` in `.env.example` to `gitbooster`. Added `google-cloud-bigquery` and `db-dtypes`, `src/hackathon/stages/bigquery.py` (`ingest_bq`, `write_bq`), a `bigquery:` block in `config/config.yaml`, and `--query` / `--bq-table` CLI flags in `main.py`. File input still works as before.
+- 2026-10-11: Added optional Google Cloud dependencies, BigQuery source/sink support, and `--query` / `--bq-table` flags in `main.py`. File input still works without the optional cloud extra.

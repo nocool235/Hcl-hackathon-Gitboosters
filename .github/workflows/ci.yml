@@ -13,4 +13,4 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev]"
       - run: ruff check .
-      - run: pytest
+      - run: pytest --cov=hackathon --cov-report=term-missing

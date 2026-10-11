@@ -22,6 +22,10 @@ htmlcov/
 data/raw/*
 data/interim/*
 data/processed/*
+!data/raw/Ecommerce_Analytics_SourceData/
+!data/raw/Ecommerce_Analytics_SourceData/Ecommerce_Analytics_SourceData/
+!data/raw/Ecommerce_Analytics_SourceData/Ecommerce_Analytics_SourceData/*.csv
+!data/raw/Ecommerce_Analytics_SourceData/Ecommerce_Analytics_SourceData/suppliers.json
 !data/**/.gitkeep
 
 # Databases and credentials

@@ -1,0 +1,21 @@
+ordered_quantity,product_id,product_name,rank_high_to_low,ranking,return_rate_pct,returned_quantity
+29,P029,Furniture Item 29,1,TOP_10,19.8,5.7426
+25,P018,Team Sports Item 18,2,TOP_10,19.69,4.9236
+24,P052,Womenswear Item 52,3,TOP_10,17.53,4.2061
+12,P026,Footwear Item 26,4,TOP_10,16.58,1.9897
+24,P045,Footwear Item 45,5,TOP_10,14.47,3.4739
+40,P059,,6,TOP_10,12.5,5.0
+28,P030,Furniture Item 30,7,TOP_10,12.3,3.445
+41,P040,Footwear Item 40,8,TOP_10,11.79,4.8326
+35,P035,Cookware Item 35,9,TOP_10,11.18,3.9146
+30,P009,Furniture Item 9,10,TOP_10,11.1,3.3303
+42,P053,Outdoor Item 53,59,BOTTOM_10,0.0,0.0
+45,P055,Staples Item 55,60,BOTTOM_10,0.0,0.0
+36,P056,Audio Item 56,61,BOTTOM_10,0.0,0.0
+28,P060,Staples Item 60 (Revised),62,BOTTOM_10,0.0,0.0
+57,P061,Furniture Item 61,63,BOTTOM_10,0.0,0.0
+42,P062,Cookware Item 62,64,BOTTOM_10,0.0,0.0
+42,P063,Beverages Item 63,65,BOTTOM_10,0.0,0.0
+18,P064,Womenswear Item 64,66,BOTTOM_10,0.0,0.0
+32,P066,Staples Item 66,67,BOTTOM_10,0.0,0.0
+29,P067,Appliances Item 67,68,BOTTOM_10,0.0,0.0

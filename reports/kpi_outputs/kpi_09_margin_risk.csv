@@ -1,0 +1,30 @@
+product_id,product_name,quantity_exposed,revenue_exposed
+P001,Accessories Item 1,14,90207.8
+P002,Furniture Item 2,26,22694.95
+P005,Staples Item 5,2,100.54
+P006,Furniture Item 6,27,51127.71
+P008,,11,7588.51
+P010,Accessories Item 10,34,22002.21
+P013,Appliances Item 13,25,274345.35
+P019,Beverages Item 19,11,596.0
+P020,Beverages Item 20,48,89778.19
+P021,Fitness Item 21,8,2025.22
+P023,Footwear Item 23,2,199.24
+P027,Appliances Item 27,16,20305.57
+P028,Appliances Item 28,20,56691.57
+P034,Fitness Item 34,20,8885.65
+P036,Staples Item 36,4,872.69
+P039,Fitness Item 39,24,224757.08
+P040,Footwear Item 40,19,8139.3
+P042,Staples Item 42,5,4555.97
+P051,Footwear Item 51,12,32462.59
+P053,Outdoor Item 53,4,116.36
+P054,Fitness Item 54,8,1531.26
+P055,Staples Item 55,20,7505.21
+P056,Audio Item 56,15,16376.75
+P057,Team Sports Item 57,5,1930.71
+P059,,3,2152.86
+P060,Staples Item 60 (Revised),28,218747.7
+P062,Cookware Item 62,14,189.76
+P063,Beverages Item 63,12,6542.02
+P065,Footwear Item 65,66,600320.85

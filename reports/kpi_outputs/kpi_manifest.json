@@ -1,0 +1,24 @@
+{
+  "row_counts": {
+    "net_revenue_by_category_month": 118,
+    "top_customers_by_ltv": 10,
+    "customer_segment_profile": 4,
+    "mom_channel_growth": 60,
+    "product_return_rate": 20,
+    "supplier_scorecard": 18,
+    "repeat_purchase_rate": 1,
+    "payment_reconciliation": 320,
+    "margin_risk": 29
+  },
+  "assumptions": {
+    "revenue": "Completed orders only; line_total is the discounted sale amount; approved refunds are capped at the line amount and allocated to the sale month.",
+    "ltv": "Completed orders with a known customer only; net lifetime value is discounted line revenue less approved refunds.",
+    "segment": "Customer count uses the current cleansed customer dimension; average order value uses completed orders and discounted line totals.",
+    "channel_growth": "Completed orders only; revenue is discounted line revenue and growth is compared with the immediately preceding calendar month.",
+    "return_rate": "Approved returned quantity divided by ordered quantity; products must meet the configured minimum ordered-unit threshold.",
+    "supplier_score": "Composite score = 50% revenue share + 30% inverse average return rate + 20% normalized supplier rating.",
+    "repeat_rate": "A repeat customer has a second distinct completed order within the configured window after the first completed order.",
+    "payments": "Successful payment rows are summed; the configured tolerance determines match, underpayment, and overpayment. Every cleansed order is reported.",
+    "margin": "Effective selling price is unit_price after line discount; products are reported when cost_price exceeds that effective price."
+  }
+}

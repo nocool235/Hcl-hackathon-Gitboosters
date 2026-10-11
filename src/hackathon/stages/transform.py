@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
 
 def transform(df: pd.DataFrame, drop_duplicates: bool = True) -> pd.DataFrame:
     df = df.copy()
-    df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+    columns = []
+    for column in df.columns:
+        name = re.sub(r"[^a-z0-9]+", "_", str(column).strip().lower()).strip("_")
+        columns.append(name or "unnamed")
+    if len(columns) != len(set(columns)):
+        duplicates = sorted({c for c in columns if columns.count(c) > 1})
+        raise ValueError(f"Column normalization creates duplicate names: {duplicates}")
+    df.columns = columns
     if drop_duplicates:
         df = df.drop_duplicates().reset_index(drop=True)
     return df

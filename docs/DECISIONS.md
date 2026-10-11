@@ -18,3 +18,7 @@
 | 14 | Reference date | Latest order date in silver, never today. Stored in `run_params`. | Brief. |
 | 15 | `_loaded_at` | Real load time, so it differs per run; idempotency comparisons exclude it. | Lineage needs a true timestamp. |
 | 16 | Commits | No commits are made by the assistant. | Owner preference. |
+| 17 | KPI revenue scope | Use completed orders; use discounted `line_total`; cap approved refunds at the line value and allocate them to the sale month. | Keeps revenue comparable to the order month while preventing excessive refunds from creating artificial negative revenue. |
+| 18 | Supplier score | Composite score is 50% revenue share, 30% inverse average product return rate, and 20% normalized supplier rating. | Makes the trade-off explicit and keeps the score on a 0-100 scale. |
+| 19 | Payment reconciliation | Sum successful payment rows per order and classify differences using `payment_tolerance`; report every cleansed order. | Failed and pending attempts should not count as settled cash. |
+| 20 | Missing temporal fields | Retain rows, expose warning flags, and write them to `quality_issues`; do not silently convert them into valid dates. | Analysts can choose whether to exclude them for a specific KPI. |

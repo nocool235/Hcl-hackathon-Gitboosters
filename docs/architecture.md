@@ -76,7 +76,7 @@ hcl-hackathon-starter/
 │   └── DECISIONS.md             # Numbered decision log
 ├── reports/
 │   └── profiling_report.md      # Source data profiling results
-├── kpis/                        # KPI SQL queries (planned)
+├── reports/kpi_outputs/         # Generated KPI CSVs and manifest
 ├── notebooks/                   # Exploration notebooks
 ├── src/hackathon/
 │   ├── config.py                # YAML + .env loader
@@ -256,7 +256,7 @@ graph TB
 
     subgraph "Cloud (Optional)"
         GCP["Google Cloud Platform"]
-        BQ["BigQuery\nproject: after-all-511217-c3"]
+        BQ["BigQuery\nproject: configured by GCP_PROJECT_ID"]
         ADC["gcloud ADC auth"]
     end
 

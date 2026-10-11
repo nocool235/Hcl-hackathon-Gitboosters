@@ -112,5 +112,6 @@ def clean_phone(value) -> str | None:
     return digits or None
 
 
-def money(value: Decimal | None) -> float | None:
-    return None if value is None else float(value.quantize(Decimal("0.01")))
+def money(value: Decimal | None) -> Decimal | None:
+    """Keep monetary values exact through the database boundary."""
+    return None if value is None else value.quantize(Decimal("0.01"))

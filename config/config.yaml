@@ -33,3 +33,7 @@ medallion:              # ShopSphere pipeline: python -m hackathon.medallion
   repeat_window_days: 90       # repeat-purchase window
   bq_dataset: null             # e.g. shopsphere_gold; null = no BigQuery load (or --bq-dataset)
   bq_location: US              # dataset location, used when the dataset is created
+
+kpis:
+  db_path: data/processed/shopsphere.db
+  output_dir: reports/kpi_outputs

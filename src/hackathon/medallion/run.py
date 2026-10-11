@@ -67,10 +67,17 @@ def run_pipeline(**overrides) -> dict:
         silver_rows, quarantine_rows, stats = silver.build_silver(bronze_rows)
         for entity in silver_rows:
             db.write_table(conn, f"silver_{entity}", silver.silver_columns(entity),
-                           silver_rows[entity])
+                           silver_rows[entity], primary_key=silver.KEYS[entity])
             db.write_table(conn, f"quarantine_{entity}", silver.QUARANTINE_COLUMNS,
                            quarantine_rows[entity])
         counts["entities"] = stats
+        db.write_table(
+            conn,
+            "quality_issues",
+            ["run_id", *quality.ISSUE_COLUMNS],
+            [{"run_id": run_id, **row}
+             for row in quality.issue_rows(silver_rows, quarantine_rows)],
+        )
 
         gate_results += quality.reconciliation_gates(stats)
         gate_results += quality.unique_key_gates(silver_rows, silver.KEYS)
@@ -84,7 +91,26 @@ def run_pipeline(**overrides) -> dict:
         quality.enforce(gate_results)
 
         for name, rows in gold_rows.items():
-            db.write_table(conn, name, gold.GOLD_COLUMNS[name], rows)
+            primary_keys = {
+                "dim_customer": "customer_key", "dim_supplier": "supplier_key",
+                "dim_product": "product_key", "dim_date": "date_key",
+                "fact_orders": "order_id", "fact_order_items": "order_item_id",
+                "fact_payments": "payment_id", "fact_returns": "return_id",
+            }
+            foreign_keys = {
+                "dim_product": [("supplier_key", "dim_supplier", "supplier_key")],
+                "fact_orders": [("customer_key", "dim_customer", "customer_key"),
+                                ("order_date_key", "dim_date", "date_key")],
+                "fact_order_items": [("product_key", "dim_product", "product_key"),
+                                     ("order_date_key", "dim_date", "date_key")],
+                "fact_payments": [("payment_date_key", "dim_date", "date_key")],
+                "fact_returns": [("product_key", "dim_product", "product_key"),
+                                 ("return_date_key", "dim_date", "date_key")],
+            }
+            db.write_table(
+                conn, name, gold.GOLD_COLUMNS[name], rows,
+                primary_key=primary_keys[name], foreign_keys=foreign_keys.get(name),
+            )
         counts["gold"] = {name: len(rows) for name, rows in gold_rows.items()}
         _write_params(conn, params, silver_rows)
         _finish_run(conn, run_id, "SUCCESS", counts, None)

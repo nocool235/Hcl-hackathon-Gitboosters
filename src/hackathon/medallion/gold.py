@@ -5,35 +5,127 @@ from __future__ import annotations
 import calendar
 import hashlib
 from datetime import date, timedelta
+from decimal import Decimal
 
 UNKNOWN_KEY = -1
 OPEN_START, OPEN_END = "1900-01-01", "9999-12-31"
 
 GOLD_COLUMNS = {
-    "dim_customer": ["customer_key", "customer_id", "first_name", "last_name", "email", "phone",
-                     "address_line1", "city", "state", "zip_code", "country", "signup_date",
-                     "customer_segment", "is_active", "dup_group_id", "valid_from", "valid_to",
-                     "is_current"],
-    "dim_supplier": ["supplier_key", "supplier_id", "supplier_name", "country", "rating_raw",
-                     "rating_scale_max", "rating_norm", "contract_start_date", "is_preferred"],
-    "dim_product": ["product_key", "product_id", "product_name", "category", "sub_category",
-                    "unit_price", "cost_price", "supplier_key", "supplier_id", "is_active",
-                    "launch_date", "price_issue"],
-    "dim_date": ["date_key", "date", "year", "quarter", "month", "month_name", "year_month",
-                 "day", "day_of_week", "is_weekend"],
-    "fact_orders": ["order_id", "customer_key", "customer_id_source", "order_date_key",
-                    "order_date", "order_status", "channel", "payment_method", "promo_code",
-                    "shipping_city", "is_orphan_customer"],
-    "fact_order_items": ["order_item_id", "order_id", "product_key", "product_id_source",
-                         "order_date_key", "quantity", "unit_price", "discount_pct",
-                         "line_total", "source_line_total", "line_total_mismatch",
-                         "is_orphan_order", "is_orphan_product"],
-    "fact_payments": ["payment_id", "order_id", "payment_date_key", "payment_date", "amount",
-                      "payment_status", "payment_method", "is_orphan_order"],
-    "fact_returns": ["return_id", "order_item_id", "order_id", "product_key", "return_date_key",
-                     "return_date", "return_reason", "return_status", "refund_amount",
-                     "returned_quantity", "returned_quantity_basis", "refund_exceeds_line",
-                     "return_before_order", "is_orphan_item"],
+    "dim_customer": [
+        "customer_key",
+        "customer_id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "address_line1",
+        "city",
+        "state",
+        "zip_code",
+        "country",
+        "signup_date",
+        "customer_segment",
+        "is_active",
+        "dup_group_id",
+        "valid_from",
+        "valid_to",
+        "is_current",
+    ],
+    "dim_supplier": [
+        "supplier_key",
+        "supplier_id",
+        "supplier_name",
+        "country",
+        "rating_raw",
+        "rating_scale_max",
+        "rating_norm",
+        "contract_start_date",
+        "is_preferred",
+    ],
+    "dim_product": [
+        "product_key",
+        "product_id",
+        "product_name",
+        "category",
+        "sub_category",
+        "unit_price",
+        "cost_price",
+        "supplier_key",
+        "supplier_id",
+        "is_active",
+        "launch_date",
+        "price_issue",
+    ],
+    "dim_date": [
+        "date_key",
+        "date",
+        "year",
+        "quarter",
+        "month",
+        "month_name",
+        "year_month",
+        "day",
+        "day_of_week",
+        "is_weekend",
+    ],
+    "fact_orders": [
+        "order_id",
+        "customer_key",
+        "customer_id_source",
+        "order_date_key",
+        "order_date",
+        "order_status",
+        "channel",
+        "payment_method",
+        "promo_code",
+        "shipping_city",
+        "is_orphan_customer",
+        "order_before_signup",
+    ],
+    "fact_order_items": [
+        "order_item_id",
+        "order_id",
+        "product_key",
+        "product_id_source",
+        "order_date_key",
+        "quantity",
+        "unit_price",
+        "discount_pct",
+        "line_total",
+        "source_line_total",
+        "line_total_mismatch",
+        "is_orphan_order",
+        "is_orphan_product",
+        "order_before_product_launch",
+    ],
+    "fact_payments": [
+        "payment_id",
+        "order_id",
+        "payment_date_key",
+        "payment_date",
+        "amount",
+        "payment_status",
+        "payment_method",
+        "payment_date_missing",
+        "payment_before_order",
+        "is_orphan_order",
+    ],
+    "fact_returns": [
+        "return_id",
+        "order_item_id",
+        "order_id",
+        "product_key",
+        "return_date_key",
+        "return_date",
+        "return_reason",
+        "return_status",
+        "refund_amount",
+        "returned_quantity",
+        "returned_quantity_basis",
+        "refund_exceeds_line",
+        "return_before_order",
+        "is_orphan_item",
+    ],
 }
 
 
@@ -61,11 +153,20 @@ def build_dim_date(silver: dict) -> list[dict]:
     last = last.replace(day=calendar.monthrange(last.year, last.month)[1])
     rows, d = [], first
     while d <= last:
-        rows.append({"date_key": int(d.strftime("%Y%m%d")), "date": d.isoformat(),
-                     "year": d.year, "quarter": (d.month - 1) // 3 + 1, "month": d.month,
-                     "month_name": d.strftime("%B"), "year_month": d.strftime("%Y-%m"),
-                     "day": d.day, "day_of_week": d.strftime("%A"),
-                     "is_weekend": int(d.weekday() >= 5)})
+        rows.append(
+            {
+                "date_key": int(d.strftime("%Y%m%d")),
+                "date": d.isoformat(),
+                "year": d.year,
+                "quarter": (d.month - 1) // 3 + 1,
+                "month": d.month,
+                "month_name": d.strftime("%B"),
+                "year_month": d.strftime("%Y-%m"),
+                "day": d.day,
+                "day_of_week": d.strftime("%A"),
+                "is_weekend": int(d.weekday() >= 5),
+            }
+        )
         d += timedelta(days=1)
     return rows
 
@@ -77,28 +178,57 @@ def build_gold(silver: dict[str, list[dict]]) -> dict[str, list[dict]]:
     customers = []
     for r in silver["customers"]:
         key = surrogate_key("customer", f"{r['customer_id']}|{OPEN_START}")
-        customers.append({**_pick(r, GOLD_COLUMNS["dim_customer"]), "customer_key": key,
-                          "valid_from": OPEN_START, "valid_to": OPEN_END, "is_current": 1})
-    customers.append({"customer_key": UNKNOWN_KEY, "customer_id": "UNKNOWN",
-                      "customer_segment": "Unknown", "valid_from": OPEN_START,
-                      "valid_to": OPEN_END, "is_current": 1})
+        customers.append(
+            {
+                **_pick(r, GOLD_COLUMNS["dim_customer"]),
+                "customer_key": key,
+                "valid_from": OPEN_START,
+                "valid_to": OPEN_END,
+                "is_current": 1,
+            }
+        )
+    customers.append(
+        {
+            "customer_key": UNKNOWN_KEY,
+            "customer_id": "UNKNOWN",
+            "customer_segment": "Unknown",
+            "valid_from": OPEN_START,
+            "valid_to": OPEN_END,
+            "is_current": 1,
+        }
+    )
     gold["dim_customer"] = customers
 
-    suppliers = [{**_pick(r, GOLD_COLUMNS["dim_supplier"]),
-                  "supplier_key": surrogate_key("supplier", r["supplier_id"])}
-                 for r in silver["suppliers"]]
-    suppliers.append({"supplier_key": UNKNOWN_KEY, "supplier_id": "UNKNOWN",
-                      "supplier_name": "Unknown"})
+    suppliers = [
+        {
+            **_pick(r, GOLD_COLUMNS["dim_supplier"]),
+            "supplier_key": surrogate_key("supplier", r["supplier_id"]),
+        }
+        for r in silver["suppliers"]
+    ]
+    suppliers.append(
+        {"supplier_key": UNKNOWN_KEY, "supplier_id": "UNKNOWN", "supplier_name": "Unknown"}
+    )
     gold["dim_supplier"] = suppliers
 
     supplier_key = {r["supplier_id"]: r["supplier_key"] for r in suppliers}
-    products = [{**_pick(r, GOLD_COLUMNS["dim_product"]),
-                 "product_key": surrogate_key("product", r["product_id"]),
-                 "supplier_key": supplier_key.get(r["supplier_id"], UNKNOWN_KEY)}
-                for r in silver["products"]]
-    products.append({"product_key": UNKNOWN_KEY, "product_id": "UNKNOWN",
-                     "product_name": "Unknown", "category": "Unknown",
-                     "supplier_key": UNKNOWN_KEY})
+    products = [
+        {
+            **_pick(r, GOLD_COLUMNS["dim_product"]),
+            "product_key": surrogate_key("product", r["product_id"]),
+            "supplier_key": supplier_key.get(r["supplier_id"], UNKNOWN_KEY),
+        }
+        for r in silver["products"]
+    ]
+    products.append(
+        {
+            "product_key": UNKNOWN_KEY,
+            "product_id": "UNKNOWN",
+            "product_name": "Unknown",
+            "category": "Unknown",
+            "supplier_key": UNKNOWN_KEY,
+        }
+    )
     gold["dim_product"] = products
     gold["dim_date"] = build_dim_date(silver)
 
@@ -114,38 +244,51 @@ def build_gold(silver: dict[str, list[dict]]) -> dict[str, list[dict]]:
 
     # Facts
     gold["fact_orders"] = [
-        {**_pick(r, GOLD_COLUMNS["fact_orders"]),
-         "customer_key": customer_key.get(r["customer_id"], UNKNOWN_KEY),
-         "customer_id_source": r["customer_id"], "order_date_key": date_key(r["order_date"])}
-        for r in silver["orders"]]
+        {
+            **_pick(r, GOLD_COLUMNS["fact_orders"]),
+            "customer_key": customer_key.get(r["customer_id"], UNKNOWN_KEY),
+            "customer_id_source": r["customer_id"],
+            "order_date_key": date_key(r["order_date"]),
+        }
+        for r in silver["orders"]
+    ]
 
     gold["fact_order_items"] = [
-        {**_pick(r, GOLD_COLUMNS["fact_order_items"]),
-         "product_key": product_key.get(r["product_id"], UNKNOWN_KEY),
-         "product_id_source": r["product_id"],
-         "order_date_key": date_key(order_date.get(r["order_id"]))}
-        for r in silver["order_items"]]
+        {
+            **_pick(r, GOLD_COLUMNS["fact_order_items"]),
+            "product_key": product_key.get(r["product_id"], UNKNOWN_KEY),
+            "product_id_source": r["product_id"],
+            "order_date_key": date_key(order_date.get(r["order_id"])),
+        }
+        for r in silver["order_items"]
+    ]
 
     gold["fact_payments"] = [
-        {**_pick(r, GOLD_COLUMNS["fact_payments"]),
-         "payment_date_key": date_key(r["payment_date"])}
-        for r in silver["payments"]]
+        {**_pick(r, GOLD_COLUMNS["fact_payments"]), "payment_date_key": date_key(r["payment_date"])}
+        for r in silver["payments"]
+    ]
 
     returns = []
     for r in silver["returns"]:
         item = items.get(r["order_item_id"])
         qty, basis = None, "UNKNOWN"
         if item and r["refund_amount"] is not None and item["line_total"] > 0:
-            if r["refund_amount"] >= item["line_total"] - 0.01:
-                qty, basis = float(item["quantity"]), "FULL"
+            if r["refund_amount"] >= item["line_total"] - Decimal("0.01"):
+                qty, basis = Decimal(item["quantity"]), "FULL"
             else:
-                qty = round(item["quantity"] * r["refund_amount"] / item["line_total"], 4)
+                qty = round(Decimal(item["quantity"]) * r["refund_amount"] / item["line_total"], 4)
                 basis = "PROPORTIONAL"
-        returns.append({
-            **_pick(r, GOLD_COLUMNS["fact_returns"]),
-            "order_id": item["order_id"] if item else None,
-            "product_key": product_key.get(item["product_id"], UNKNOWN_KEY) if item else None,
-            "return_date_key": date_key(r["return_date"]),
-            "returned_quantity": qty, "returned_quantity_basis": basis})
+        returns.append(
+            {
+                **_pick(r, GOLD_COLUMNS["fact_returns"]),
+                "order_id": item["order_id"] if item else None,
+                "product_key": product_key.get(item["product_id"], UNKNOWN_KEY)
+                if item
+                else UNKNOWN_KEY,
+                "return_date_key": date_key(r["return_date"]),
+                "returned_quantity": qty,
+                "returned_quantity_basis": basis,
+            }
+        )
     gold["fact_returns"] = returns
     return gold

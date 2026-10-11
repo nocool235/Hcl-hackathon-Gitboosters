@@ -13,8 +13,6 @@ dependencies = [
     "python-dotenv>=1.0",
     "pyarrow>=15.0",   # parquet read/write
     "openpyxl>=3.1",   # .xlsx read
-    "google-cloud-bigquery>=3.40",  # BigQuery SDK
-    "db-dtypes>=1.2",  # BigQuery -> pandas dtypes
 ]
 
 [project.optional-dependencies]
@@ -23,9 +21,14 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.5",
 ]
+gcp = [
+    "google-cloud-bigquery>=3.40",
+    "db-dtypes>=1.2",
+]
 
 [project.scripts]
 hackathon = "hackathon.main:main"
+hackathon-kpis = "hackathon.medallion.kpis:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

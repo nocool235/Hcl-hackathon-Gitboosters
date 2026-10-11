@@ -1,4 +1,4 @@
-# HCL Hackathon Starter: Cloud Data Engineer
+# ShopSphere E-Commerce Analytics Platform
 
 A small, config-driven data pipeline you can adapt quickly during the hackathon.
 Data flows through four stages: **ingest → validate → transform → output**.
@@ -59,6 +59,22 @@ tests/                    pytest suite
 pytest          # run tests
 ruff check .    # lint
 ```
+
+## ShopSphere medallion pipeline
+
+The primary implementation runs the seven supplied source files through bronze, silver,
+quarantine, quality gates, and gold dimensional tables in SQLite:
+
+```powershell
+.venv\Scripts\python.exe -m hackathon.medallion
+.venv\Scripts\python.exe -m hackathon.medallion.kpis
+```
+
+The first command writes `data/processed/shopsphere.db`. The second writes all eight required KPI
+outputs, the optional margin-risk output, and `kpi_manifest.json` to `reports/kpi_outputs/`.
+The manifest records the calculation assumptions.
+
+BigQuery is optional. Install it only when needed with `pip install -e ".[gcp]"`.
 
 ## License
 

@@ -22,55 +22,164 @@ from hackathon.medallion.common import (
     to_bool,
 )
 
-STATUS = {"completed": "Completed", "complete": "Completed", "complted": "Completed",
-          "pending": "Pending", "cancelled": "Cancelled", "canceled": "Cancelled",
-          "cancled": "Cancelled", "returned": "Returned"}
+STATUS = {
+    "completed": "Completed",
+    "complete": "Completed",
+    "complted": "Completed",
+    "pending": "Pending",
+    "cancelled": "Cancelled",
+    "canceled": "Cancelled",
+    "cancled": "Cancelled",
+    "returned": "Returned",
+}
 CHANNEL = {"web": "Web", "app": "App", "store": "Store", "instore": "Store"}
-SEGMENT = {"platinum": "Platinum", "gold": "Gold", "glod": "Gold", "silver": "Silver",
-           "silverr": "Silver", "bronze": "Bronze", "broze": "Bronze"}
-CATEGORY = {"fashion": "Fashion", "grocery": "Grocery", "electronics": "Electronics",
-            "electornics": "Electronics", "sports": "Sports",
-            "homeandkitchen": "Home & Kitchen"}
-PAYMENT_STATUS = {"success": "Success", "succeded": "Success", "succeeded": "Success",
-                  "failed": "Failed", "pending": "Pending", "refunded": "Refunded"}
+SEGMENT = {
+    "platinum": "Platinum",
+    "gold": "Gold",
+    "glod": "Gold",
+    "silver": "Silver",
+    "silverr": "Silver",
+    "bronze": "Bronze",
+    "broze": "Bronze",
+}
+CATEGORY = {
+    "fashion": "Fashion",
+    "grocery": "Grocery",
+    "electronics": "Electronics",
+    "electornics": "Electronics",
+    "sports": "Sports",
+    "homeandkitchen": "Home & Kitchen",
+}
+PAYMENT_STATUS = {
+    "success": "Success",
+    "succeded": "Success",
+    "succeeded": "Success",
+    "failed": "Failed",
+    "pending": "Pending",
+    "refunded": "Refunded",
+}
 RETURN_STATUS = {"approved": "Approved", "rejected": "Rejected", "pending": "Pending"}
 RETURN_REASON = {"damged": "damaged"}
 
 # Business columns (used for completeness and duplicate comparison) per entity.
 COLUMNS = {
-    "customers": ["customer_id", "first_name", "last_name", "email", "phone", "address_line1",
-                  "city", "state", "zip_code", "country", "signup_date", "customer_segment",
-                  "is_active"],
-    "suppliers": ["supplier_id", "supplier_name", "country", "rating_raw", "rating_scale_max",
-                  "rating_norm", "contract_start_date", "is_preferred"],
-    "products": ["product_id", "product_name", "category", "sub_category", "unit_price",
-                 "cost_price", "supplier_id", "is_active", "launch_date", "price_issue"],
-    "orders": ["order_id", "customer_id", "order_date", "order_status", "payment_method",
-               "channel", "promo_code", "shipping_city"],
-    "order_items": ["order_item_id", "order_id", "product_id", "quantity", "unit_price",
-                    "discount_pct", "line_total", "source_line_total"],
-    "payments": ["payment_id", "order_id", "payment_date", "amount", "payment_status",
-                 "payment_method"],
-    "returns": ["return_id", "order_item_id", "return_date", "return_reason", "refund_amount",
-                "return_status"],
+    "customers": [
+        "customer_id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "address_line1",
+        "city",
+        "state",
+        "zip_code",
+        "country",
+        "signup_date",
+        "customer_segment",
+        "is_active",
+    ],
+    "suppliers": [
+        "supplier_id",
+        "supplier_name",
+        "country",
+        "rating_raw",
+        "rating_scale_max",
+        "rating_norm",
+        "contract_start_date",
+        "is_preferred",
+    ],
+    "products": [
+        "product_id",
+        "product_name",
+        "category",
+        "sub_category",
+        "unit_price",
+        "cost_price",
+        "supplier_id",
+        "is_active",
+        "launch_date",
+        "price_issue",
+    ],
+    "orders": [
+        "order_id",
+        "customer_id",
+        "order_date",
+        "order_status",
+        "payment_method",
+        "channel",
+        "promo_code",
+        "shipping_city",
+    ],
+    "order_items": [
+        "order_item_id",
+        "order_id",
+        "product_id",
+        "quantity",
+        "unit_price",
+        "discount_pct",
+        "line_total",
+        "source_line_total",
+    ],
+    "payments": [
+        "payment_id",
+        "order_id",
+        "payment_date",
+        "amount",
+        "payment_status",
+        "payment_method",
+    ],
+    "returns": [
+        "return_id",
+        "order_item_id",
+        "return_date",
+        "return_reason",
+        "refund_amount",
+        "return_status",
+    ],
 }
 # Columns added after cleansing (cross-entity checks); not used to pick duplicate winners.
 FLAGS = {
-    "customers": ["dup_group_id"],
+    "customers": ["signup_date_ambiguous", "signup_date_missing", "dup_group_id"],
     "suppliers": [],
-    "products": ["is_orphan_supplier"],
-    "orders": ["order_date_ambiguous", "is_orphan_customer"],
-    "order_items": ["line_total_mismatch", "is_orphan_order", "is_orphan_product"],
-    "payments": ["payment_date_ambiguous", "is_orphan_order"],
-    "returns": ["return_date_ambiguous", "is_orphan_item", "refund_exceeds_line",
-                "return_before_order"],
+    "products": ["launch_date_ambiguous", "is_orphan_supplier"],
+    "orders": ["order_date_ambiguous", "is_orphan_customer", "order_before_signup"],
+    "order_items": [
+        "line_total_mismatch",
+        "is_orphan_order",
+        "is_orphan_product",
+        "order_before_product_launch",
+    ],
+    "payments": [
+        "payment_date_ambiguous",
+        "payment_date_missing",
+        "is_orphan_order",
+        "payment_before_order",
+    ],
+    "returns": [
+        "return_date_ambiguous",
+        "is_orphan_item",
+        "refund_exceeds_line",
+        "return_before_order",
+    ],
 }
-KEYS = {"customers": "customer_id", "suppliers": "supplier_id", "products": "product_id",
-        "orders": "order_id", "order_items": "order_item_id", "payments": "payment_id",
-        "returns": "return_id"}
+KEYS = {
+    "customers": "customer_id",
+    "suppliers": "supplier_id",
+    "products": "product_id",
+    "orders": "order_id",
+    "order_items": "order_item_id",
+    "payments": "payment_id",
+    "returns": "return_id",
+}
 SILVER_COLUMNS = {e: COLUMNS[e] + FLAGS[e] + ["_row_number"] for e in COLUMNS}
-QUARANTINE_COLUMNS = ["_row_number", "record_key", "reason_code", "reason_detail", "raw_payload",
-                      "_batch_id"]
+QUARANTINE_COLUMNS = [
+    "_row_number",
+    "record_key",
+    "reason_code",
+    "reason_detail",
+    "raw_payload",
+    "_batch_id",
+]
 
 
 def silver_columns(entity: str) -> list[str]:
@@ -78,6 +187,7 @@ def silver_columns(entity: str) -> list[str]:
 
 
 # ---------- cleansing functions: raw bronze row -> (clean row, None) or (None, (code, detail)) --
+
 
 def clean_customer(raw: dict):
     customer_id = clean_text(raw["customer_id"])
@@ -100,6 +210,8 @@ def clean_customer(raw: dict):
         "signup_date": parse_date(raw["signup_date"]),
         "customer_segment": map_value(raw["customer_segment"], SEGMENT) or "Unknown",
         "is_active": to_bool(raw["is_active"]),
+        "signup_date_ambiguous": int(is_ambiguous_date(raw["signup_date"])),
+        "signup_date_missing": int(parse_date(raw["signup_date"]) is None),
         "_row_number": raw["_row_number"],
     }, None
 
@@ -155,6 +267,7 @@ def clean_product(raw: dict):
         "is_active": to_bool(raw["is_active"]),
         "launch_date": parse_date(raw["launch_date"]),
         "price_issue": ",".join(issues) or None,
+        "launch_date_ambiguous": int(is_ambiguous_date(raw["launch_date"])),
         "_row_number": raw["_row_number"],
     }, None
 
@@ -246,6 +359,7 @@ def clean_payment(raw: dict):
         "payment_status": status,
         "payment_method": clean_text(raw["payment_method"]),
         "payment_date_ambiguous": int(is_ambiguous_date(raw["payment_date"])),
+        "payment_date_missing": int(parse_date(raw["payment_date"]) is None),
         "_row_number": raw["_row_number"],
     }, None
 
@@ -279,6 +393,7 @@ def clean_return(raw: dict):
 
 # ---------- the engine: validate, then pick one winner per key ----------
 
+
 def completeness(row: dict, columns: list[str]) -> int:
     return sum(1 for c in columns if row.get(c) is not None)
 
@@ -290,9 +405,14 @@ def content_hash(row: dict, columns: list[str]) -> str:
 
 def _quarantine_row(raw: dict, key: str, code: str, detail: str) -> dict:
     payload = {k: v for k, v in raw.items() if not k.startswith("_")}
-    return {"_row_number": raw["_row_number"], "record_key": clean_text(raw.get(key)),
-            "reason_code": code, "reason_detail": detail,
-            "raw_payload": json.dumps(payload, sort_keys=True), "_batch_id": raw["_batch_id"]}
+    return {
+        "_row_number": raw["_row_number"],
+        "record_key": clean_text(raw.get(key)),
+        "reason_code": code,
+        "reason_detail": detail,
+        "raw_payload": json.dumps(payload, sort_keys=True),
+        "_batch_id": raw["_batch_id"],
+    }
 
 
 def process_entity(entity: str, bronze_rows: list[dict], cleaner):
@@ -313,8 +433,10 @@ def process_entity(entity: str, bronze_rows: list[dict], cleaner):
         groups[row[key]].append(row)
     silver = []
     for k in sorted(groups):
-        ranked = sorted(groups[k], key=lambda r: (-completeness(r, columns),
-                                                  content_hash(r, columns), r["_row_number"]))
+        ranked = sorted(
+            groups[k],
+            key=lambda r: (-completeness(r, columns), content_hash(r, columns), r["_row_number"]),
+        )
         winner = ranked[0]
         silver.append(winner)
         for loser in ranked[1:]:
@@ -332,23 +454,39 @@ def add_flags(silver: dict[str, list[dict]]) -> None:
     product_ids = {r["product_id"] for r in silver["products"]}
     customer_ids = {r["customer_id"] for r in silver["customers"]}
     order_date = {r["order_id"]: r["order_date"] for r in silver["orders"]}
+    signup_date = {r["customer_id"]: r["signup_date"] for r in silver["customers"]}
+    product_launch = {r["product_id"]: r["launch_date"] for r in silver["products"]}
     items = {r["order_item_id"]: r for r in silver["order_items"]}
 
     for r in silver["products"]:
         r["is_orphan_supplier"] = int(r["supplier_id"] not in supplier_ids)
     for r in silver["orders"]:
         r["is_orphan_customer"] = int(r["customer_id"] not in customer_ids)
+        signup = signup_date.get(r["customer_id"])
+        r["order_before_signup"] = int(signup is not None and r["order_date"] < signup)
     for r in silver["order_items"]:
         r["is_orphan_order"] = int(r["order_id"] not in order_date)
         r["is_orphan_product"] = int(r["product_id"] not in product_ids)
+        placed = order_date.get(r["order_id"])
+        launched = product_launch.get(r["product_id"])
+        r["order_before_product_launch"] = int(
+            placed is not None and launched is not None and placed < launched
+        )
     for r in silver["payments"]:
         r["is_orphan_order"] = int(r["order_id"] not in order_date)
+        placed = order_date.get(r["order_id"])
+        r["payment_before_order"] = int(
+            placed is not None and r["payment_date"] is not None and r["payment_date"] < placed
+        )
     for r in silver["returns"]:
         item = items.get(r["order_item_id"])
         r["is_orphan_item"] = int(item is None)
         refund = r["refund_amount"]
         r["refund_exceeds_line"] = int(
-            item is not None and refund is not None and refund > item["line_total"] + 0.01)
+            item is not None
+            and refund is not None
+            and refund > item["line_total"] + Decimal("0.01")
+        )
         placed = order_date.get(item["order_id"]) if item else None
         r["return_before_order"] = int(placed is not None and r["return_date"] < placed)
 
@@ -365,9 +503,13 @@ def add_flags(silver: dict[str, list[dict]]) -> None:
 def build_silver(bronze: dict[str, list[dict]]):
     scale = detect_rating_scale([r["rating"] for r in bronze["suppliers"]])
     cleaners = {
-        "customers": clean_customer, "suppliers": partial(clean_supplier, scale=scale),
-        "products": clean_product, "orders": clean_order, "order_items": clean_order_item,
-        "payments": clean_payment, "returns": clean_return,
+        "customers": clean_customer,
+        "suppliers": partial(clean_supplier, scale=scale),
+        "products": clean_product,
+        "orders": clean_order,
+        "order_items": clean_order_item,
+        "payments": clean_payment,
+        "returns": clean_return,
     }
     silver, quarantine, stats = {}, {}, {}
     for entity, cleaner in cleaners.items():
@@ -377,6 +519,10 @@ def build_silver(bronze: dict[str, list[dict]]):
         reasons = defaultdict(int)
         for q in quarantine[entity]:
             reasons[q["reason_code"]] += 1
-        stats[entity] = {"bronze": len(bronze[entity]), "silver": len(silver[entity]),
-                         "quarantine": len(quarantine[entity]), "reasons": dict(reasons)}
+        stats[entity] = {
+            "bronze": len(bronze[entity]),
+            "silver": len(silver[entity]),
+            "quarantine": len(quarantine[entity]),
+            "reasons": dict(reasons),
+        }
     return silver, quarantine, stats
