@@ -31,6 +31,13 @@ dashboard = [
     "db-dtypes>=1.2",
 ]
 
+app = [
+    "streamlit>=1.38",
+    "google-cloud-bigquery>=3.40",
+    "db-dtypes>=1.2",
+    "google-genai>=1.0",
+]
+
 [project.scripts]
 hackathon = "hackathon.main:main"
 hackathon-kpis = "hackathon.kpis:main"

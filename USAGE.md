@@ -214,6 +214,23 @@ Tests: [`tests/test_kpis.py`](tests/test_kpis.py) builds a tiny gold database (n
 
 ---
 
+## Team analytics app (`src/hackathon/analytics/`)
+
+Streamlit app for Finance, Marketing and Supply Chain. It runs the KPI SQL files (`kpis/bigquery/` on BigQuery, or `kpis/` on the local SQLite gold) through `hackathon.kpis` and shows:
+
+- **RAG status**: Red/Amber/Green tiles per team (`rag_status.py`). Revenue growth uses the last *complete* month (the month of `reference_date` is dropped when partial) and payment matching is judged on Completed orders only. Thresholds are working assumptions: override per metric under `analytics.thresholds` in `config/config.yaml` once each team confirms its targets.
+- **Ask the data** (retrieval-augmented Q&A, `qa.py`): BM25 retrieval over the KPI results, each KPI's SQL header (definition, inclusions, exclusions) and `docs/data_model.md`, filtered to the selected team, then answered by Gemini with cited chunks. The model never writes SQL.
+
+```powershell
+.venv\Scripts\python.exe -m pip install -e ".[app]"
+# .env: GCP_PROJECT_ID, GEMINI_API_KEY (Q&A tab only)
+.venv\Scripts\python.exe -m streamlit run src/hackathon/analytics/app.py
+```
+
+BigQuery shows whatever was last loaded: after any pipeline change rerun `python -m hackathon.medallion --bq-dataset shopsphere_gold`.
+
+---
+
 ## Change log
 
 - 2026-10-11: Silver now fills a blank product category from its sub-category when the sub-category maps to exactly one category (`infer_categories` in `silver.py`; new `category_inferred` flag on silver/gold products, a BOOL in BigQuery, and `CATEGORY_INFERRED` rows in `quality_issues`). 5 products fixed; KPI 1 `Unknown` fell from ~₹2.0M (39 lines) to ₹119,345 (5 lines for product ids missing from the product file); total net revenue unchanged. BigQuery reloaded. DECISIONS.md #24.

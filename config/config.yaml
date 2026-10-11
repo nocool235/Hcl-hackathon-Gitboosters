@@ -44,3 +44,7 @@ kpis:
   sql_output_dir: outputs/kpis      # one <name>.csv per SQL file
   report_path: reports/kpi_report.md
   head_rows: 10                     # rows of each result shown in the report
+
+analytics:              # team app: streamlit run src/hackathon/analytics/app.py
+  model: gemini-3.5-flash      # LLM for Q&A; needs GEMINI_API_KEY in .env
+  thresholds: {}               # per-metric RAG overrides, e.g. payment_match_pct: {green: 98, amber: 90}
