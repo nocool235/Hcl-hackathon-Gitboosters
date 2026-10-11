@@ -1,7 +1,7 @@
 # Usage: what is used, why, and how it beats the alternatives
 
 > This file is kept up to date with every change made to the repo.
-> Last updated: 2026-10-10 (initial version; added pyarrow, openpyxl, README, LICENSE).
+> Last updated: 2026-10-11 (added BigQuery source/sink; GCP project set to gitbooster).
 
 ## Runtime dependencies
 
@@ -12,6 +12,7 @@
 | **PyYAML** | Reads `config/config.yaml` | Human-readable config with comments | Easier to edit than JSON (comments, no quotes everywhere) and safer than executable Python config; `safe_load` avoids code execution |
 | **python-dotenv** | Loads secrets from a git-ignored `.env` | Keeps API keys and cloud credentials out of code and git | Simpler than a secrets manager for local work; same `os.getenv` code works unchanged when real env vars or a cloud secret store are used in deployment |
 | **pyarrow** | Parquet read/write engine for pandas | Parquet is the standard columnar format on S3 / ADLS / GCS and in data lakes | Much smaller and faster to query than CSV, keeps column types, supports partitioning. Chosen over fastparquet for broader support and being the Arrow standard shared by Spark, Polars and DuckDB |
+| **google-cloud-bigquery** + **db-dtypes** | `stages/bigquery.py`: run SQL as pipeline input (`--query`) and load results to a table (`--bq-table`) | Official SDK; uses Application Default Credentials, so no keys in the repo and each teammate uses their own Google login via IAM | Simpler than the REST API or JDBC drivers; `to_dataframe()` plugs straight into the pandas stages. `maximum_bytes_billed` guards cost. `db-dtypes` supplies the pandas types for BigQuery DATE/TIME columns |
 | **openpyxl** | Reads `.xlsx` files for pandas | Business datasets often arrive as Excel | Pure Python and actively maintained; avoids the need for Excel installed (unlike COM automation) and replaces the deprecated xlrd for `.xlsx` |
 
 ## Dev and delivery tooling
@@ -45,7 +46,7 @@
 
 | Candidate | Use when | Why not included by default |
 |---|---|---|
-| boto3 / azure-storage-blob / google-cloud-storage | Reading or writing S3 / ADLS / GCS | Depends on which cloud the hackathon uses |
+| boto3 / azure-storage-blob / google-cloud-storage (BigQuery is already included) | Reading or writing S3 / ADLS / GCS | Depends on which cloud the hackathon uses |
 | PySpark or Polars | Data too big for pandas | Adds weight; pandas is faster to start with |
 | DuckDB | SQL over Parquet/CSV locally | Optional, easy to add later |
 | Docker | Packaging for deployment | Add once the pipeline is stable |
@@ -54,3 +55,4 @@
 ## Change log
 
 - 2026-10-10: Initial version. Added `pyarrow` and `openpyxl` to `pyproject.toml` (the ingest stage listed `.parquet` and `.xlsx` but had no engine to read them). Created `.venv`, `README.md`, `LICENSE` (MIT) and this file.
+- 2026-10-11: Changed `GCP_PROJECT_ID` in `.env.example` to `gitbooster`. Added `google-cloud-bigquery` and `db-dtypes`, `src/hackathon/stages/bigquery.py` (`ingest_bq`, `write_bq`), a `bigquery:` block in `config/config.yaml`, and `--query` / `--bq-table` CLI flags in `main.py`. File input still works as before.

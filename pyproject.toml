@@ -13,6 +13,8 @@ dependencies = [
     "python-dotenv>=1.0",
     "pyarrow>=15.0",   # parquet read/write
     "openpyxl>=3.1",   # .xlsx read
+    "google-cloud-bigquery>=3.40",  # BigQuery SDK
+    "db-dtypes>=1.2",  # BigQuery -> pandas dtypes
 ]
 
 [project.optional-dependencies]

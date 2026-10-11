@@ -7,6 +7,12 @@ paths:
 input:
   file: null            # e.g. data/raw/dataset.csv (or pass --input on the CLI)
 
+bigquery:               # optional; project comes from GCP_PROJECT_ID in .env
+  query: null           # SQL to use as the input instead of a file (or pass --query)
+  destination_table: null  # e.g. my_dataset.output; also load results here (or --bq-table)
+  write_disposition: WRITE_TRUNCATE  # or WRITE_APPEND
+  max_bytes_billed: 1000000000  # ~1 GB cost guard per query
+
 validate:
   required_columns: []  # fill in once the dataset is known
   allow_empty: false
