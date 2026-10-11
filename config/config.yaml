@@ -22,3 +22,14 @@ transform:
 
 output:
   file: data/processed/output.csv
+
+medallion:              # ShopSphere pipeline: python -m hackathon.medallion
+  input_dir: data/raw/Ecommerce_Analytics_SourceData/Ecommerce_Analytics_SourceData
+  db_path: data/processed/shopsphere.db
+  batch_id: batch_001
+  reference_date: null  # YYYY-MM-DD; null = latest order date in the data (never today)
+  return_rate_min_volume: 10   # min ordered units before a product return rate is reported
+  payment_tolerance: 1.00      # allowed gap between paid and order total
+  repeat_window_days: 90       # repeat-purchase window
+  bq_dataset: null             # e.g. shopsphere_gold; null = no BigQuery load (or --bq-dataset)
+  bq_location: US              # dataset location, used when the dataset is created

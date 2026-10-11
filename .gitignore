@@ -24,6 +24,11 @@ data/interim/*
 data/processed/*
 !data/**/.gitkeep
 
+# Databases and credentials
+*.db
+*.sqlite
+credentials*.json
+
 # Outputs and logs
 logs/
 *.log
